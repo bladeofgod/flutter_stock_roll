@@ -134,7 +134,7 @@ class DemoPageState extends State<DemoPage> {
     }
     double disV = (details.globalPosition.dy - lastPos.dy).abs();
     double disH = (details.globalPosition.dx - lastPos.dx).abs();
-    //logInfo('distance', '$dis');
+
     switch(slideDirection){
       case SlideDirection.Left:
         if(rightController.offset < rightController.position.maxScrollExtent){
