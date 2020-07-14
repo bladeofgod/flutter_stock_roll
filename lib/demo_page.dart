@@ -4,6 +4,7 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:flutterstockroller/line_chart.dart';
 
 class DemoPage extends StatefulWidget{
   final Size size;
@@ -210,6 +211,7 @@ class DemoPageState extends State<DemoPage> {
             Container(
               width: miniPageWidth,height: size.height,
               color: Colors.red,
+              child: buildLeftDetail(),
             ),
             ///right
             Container(
@@ -220,6 +222,31 @@ class DemoPageState extends State<DemoPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget buildLeftDetail(){
+    return ListView.builder(
+      controller: stockVerticalController,
+      physics: NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.all(0),
+      itemCount: 50,
+      itemBuilder: (ctx,index){
+        return Container(
+          width: quarter * 3,height: blockHeight,
+          child: Row(
+            children: <Widget>[
+              LineChart(quarter*2,blockHeight),
+              Container(
+                alignment: Alignment.center,
+                color: Colors.lightBlueAccent,
+                width: quarter,height: blockHeight,
+                child: Text('分时图'),
+              )
+            ],
+          ),
+        );
+      },
     );
   }
 
