@@ -42,6 +42,8 @@ class DemoPageState extends State<DemoPage> {
   //控制左侧股票名称和右侧详情
   ScrollController stockVerticalController;
   ScrollController stockNameController;
+  //横向股票详情
+  //ScrollController detailHorController;
 
 
   DemoPageState(this.size)
@@ -54,11 +56,12 @@ class DemoPageState extends State<DemoPage> {
   void initState() {
 
     rightController = ScrollController(
-      initialScrollOffset: quarter * 2
+      initialScrollOffset: quarter*3
     );
     //stockRowController = ScrollController();
     stockVerticalController = ScrollController();
     stockNameController = ScrollController();
+    //detailHorController = ScrollController();
 
     super.initState();
   }
@@ -69,10 +72,27 @@ class DemoPageState extends State<DemoPage> {
     lastPos = details.globalPosition;
     logInfo('start', '${details.globalPosition.dx}   ${details.globalPosition.dy}');
     logInfo('start', '${stockVerticalController.offset}');
+    logInfo('right ', "${rightController.position.minScrollExtent}");
+    logInfo('right ', "${rightController.position.maxScrollExtent}");
+    logInfo('right ', "${rightController.offset}");
   }
 
+  bool rightAnimated = false;
+
   handleEnd(DragEndDetails details){
+    logInfo('end', '${details.velocity}');
     logInfo('end', 'drag end');
+    if(!rightAnimated &&rightController.offset != 0 && rightController.offset < quarter *3){
+      if((quarter*3 - rightController.offset) > quarter/2 && details.velocity.pixelsPerSecond.dx > 500){
+        rightAnimated = true;
+        rightController.animateTo(0.0, duration: Duration(milliseconds: 300), curve: Curves.ease)
+              .then((value) => rightAnimated = false);
+      }else{
+        rightAnimated = true;
+        rightController.animateTo(quarter*3, duration: Duration(milliseconds: 50), curve: Curves.ease)
+          .then((value) => rightAnimated = false);
+      }
+    }
   }
 
   handleUpdate(DragUpdateDetails details){
@@ -99,28 +119,41 @@ class DemoPageState extends State<DemoPage> {
         slideDirection = SlideDirection.Up;
       }
     }
-    double dis = (details.globalPosition.dy - lastPos.dy).abs();
+    double disV = (details.globalPosition.dy - lastPos.dy).abs();
+    double disH = (details.globalPosition.dx - lastPos.dx).abs();
     //logInfo('distance', '$dis');
     switch(slideDirection){
-
       case SlideDirection.Left:
-        // TODO: Handle this case.
+        if(rightController.offset < rightController.position.maxScrollExtent){
+          rightController.jumpTo(rightController.offset + disH);
+        }
         break;
       case SlideDirection.Right:
-        // TODO: Handle this case.
+        if(rightController.offset > quarter*3){
+          if((rightController.offset - disH) < quarter*3){
+            rightController.jumpTo(quarter*3);
+          }else{
+            rightController.jumpTo(rightController.offset - disH);
+          }
+
+        }else if(rightController.offset <= quarter*3){
+          rightController.jumpTo(rightController.offset - disH/3);
+        }
+
+
         break;
       case SlideDirection.Up:
 
         if(stockVerticalController.offset < stockVerticalController.position.maxScrollExtent){
-          stockVerticalController.jumpTo(stockVerticalController.offset+dis);
-          stockNameController.jumpTo(stockNameController.offset+dis);
+          stockVerticalController.jumpTo(stockVerticalController.offset+disV);
+          stockNameController.jumpTo(stockNameController.offset+disV);
         }
 
         break;
       case SlideDirection.Down:
         if(stockVerticalController.offset > stockVerticalController.position.minScrollExtent){
-          stockVerticalController.jumpTo(stockVerticalController.offset-dis);
-          stockNameController.jumpTo(stockNameController.offset-dis);
+          stockVerticalController.jumpTo(stockVerticalController.offset-disV);
+          stockNameController.jumpTo(stockNameController.offset-disV);
         }
         break;
     }
@@ -169,7 +202,8 @@ class DemoPageState extends State<DemoPage> {
       physics: NeverScrollableScrollPhysics(),
       child: Container(
         margin: EdgeInsets.only(top: blockHeight),
-        width: quarter*7,height: size.height,
+        padding: EdgeInsets.only(left: quarter),
+        width: quarter*4+titles.length*quarter,height: size.height,
         child: Row(
           children: <Widget>[
             ///left
@@ -179,7 +213,7 @@ class DemoPageState extends State<DemoPage> {
             ),
             ///right
             Container(
-              width: miniPageWidth,height: size.height,
+              width: titles.length*quarter,height: size.height,
               color: Colors.blue,
               child: buildStockDetail(),
             ),
@@ -206,6 +240,7 @@ class DemoPageState extends State<DemoPage> {
 
   Widget stockDetail(int index){
     return ListView(
+      //controller: detailHorController,
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       padding: EdgeInsets.all(0),
