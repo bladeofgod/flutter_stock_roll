@@ -29,6 +29,7 @@ class DemoPageState extends State<DemoPage> {
   final double blockHeight = 40;
 
   ScrollController rightController;
+  ScrollController stockRowController;
 
   DemoPageState(this.size)
     : miniPageWidth = size.width/4*3,
@@ -42,6 +43,7 @@ class DemoPageState extends State<DemoPage> {
     rightController = ScrollController(
       initialScrollOffset: quarter * 2
     );
+    stockRowController = ScrollController();
 
     super.initState();
   }
@@ -57,8 +59,8 @@ class DemoPageState extends State<DemoPage> {
         width: size.width,height: size.height,
         child: Stack(
           children: <Widget>[
-            ///right part
-            buildRightPart(size),
+            ///bottom part
+            buildBottomPart(size),
             ///left top
             Container(
               color: Colors.white,
@@ -76,12 +78,13 @@ class DemoPageState extends State<DemoPage> {
     );
   }
 
-  buildRightPart(Size size){
+  buildBottomPart(Size size){
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       controller: rightController,
       physics: NeverScrollableScrollPhysics(),
       child: Container(
+        margin: EdgeInsets.only(top: blockHeight),
         width: quarter*7,height: size.height,
         child: Row(
           children: <Widget>[
@@ -94,10 +97,46 @@ class DemoPageState extends State<DemoPage> {
             Container(
               width: miniPageWidth,height: size.height,
               color: Colors.blue,
+              child: Stack(
+                children: <Widget>[
+                  Positioned(
+                    child: buildStockDetail(),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget buildStockDetail(){
+    return ListView.builder(
+      padding: EdgeInsets.all(0),
+      itemCount: 50,
+      itemBuilder: (ctx,index){
+        return Container(
+          width: quarter * titles.length,height: blockHeight,
+          child: stockDetail(index),
+        );
+      },
+    );
+  }
+
+  Widget stockDetail(int index){
+    return ListView(
+      physics: NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      padding: EdgeInsets.all(0),
+      scrollDirection: Axis.horizontal,
+      children: List.generate(titles.length, (index){
+        return Container(
+          color: index % 2 == 0 ? Colors.yellow : Colors.purple,
+          width:quarter,height: blockHeight,
+          alignment: Alignment.center,
+          child: Text('$index.2%'),);
+      }),
     );
   }
 
