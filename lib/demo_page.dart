@@ -43,6 +43,10 @@ class DemoPageState extends State<DemoPage> {
   //控制左侧股票名称和右侧详情
   ScrollController stockVerticalController;
   ScrollController stockNameController;
+  //tag
+  ScrollController tagController;
+  //图标页
+  ScrollController chartController;
   //横向股票详情
   //ScrollController detailHorController;
 
@@ -62,6 +66,8 @@ class DemoPageState extends State<DemoPage> {
     //stockRowController = ScrollController();
     stockVerticalController = ScrollController();
     stockNameController = ScrollController();
+    chartController = ScrollController();
+    tagController = ScrollController();
     //detailHorController = ScrollController();
 
     super.initState();
@@ -71,35 +77,41 @@ class DemoPageState extends State<DemoPage> {
 
   handleStart(DragStartDetails details){
     lastPos = details.globalPosition;
-    logInfo('start', '${details.globalPosition.dx}   ${details.globalPosition.dy}');
-    logInfo('start', '${stockVerticalController.offset}');
-    logInfo('right ', "${rightController.position.minScrollExtent}");
-    logInfo('right ', "${rightController.position.maxScrollExtent}");
-    logInfo('right ', "${rightController.offset}");
+
   }
 
   bool rightAnimated = false;
+  bool chartShow = false;
 
   handleEnd(DragEndDetails details){
-    logInfo('end', '${details.velocity}');
-    logInfo('end', 'drag end');
-    if(!rightAnimated &&rightController.offset != 0 && rightController.offset < quarter *3){
-      if((quarter*3 - rightController.offset) > quarter/2 && details.velocity.pixelsPerSecond.dx > 500){
-        rightAnimated = true;
-        rightController.animateTo(0.0, duration: Duration(milliseconds: 300), curve: Curves.ease)
-              .then((value) => rightAnimated = false);
-      }else{
-        rightAnimated = true;
-        rightController.animateTo(quarter*3, duration: Duration(milliseconds: 50), curve: Curves.ease)
-          .then((value) => rightAnimated = false);
+
+    if(slideDirection == SlideDirection.Left || slideDirection == SlideDirection.Right){
+      if(!rightAnimated &&rightController.offset != 0 && rightController.offset < quarter *3){
+        if((quarter*3 - rightController.offset) > quarter/2 && details.velocity.pixelsPerSecond.dx > 500){
+          rightAnimated = true;
+          rightController.animateTo(0.0, duration: Duration(milliseconds: 300), curve: Curves.ease)
+              .then((value){
+            rightAnimated = false;
+            setState(() {
+              chartShow = true;
+            });
+          });
+        }else{
+          rightAnimated = true;
+          rightController.animateTo(quarter*3, duration: Duration(milliseconds: 50), curve: Curves.ease)
+              .then((value){
+            rightAnimated = false;
+            setState(() {
+              chartShow = false;
+            });
+          });
+        }
       }
     }
   }
 
   handleUpdate(DragUpdateDetails details){
-//    logInfo('update', 'direction   ${details.globalPosition.direction}');
-//    logInfo('update', 'delta ${details.delta}');
-    //logInfo('update', '${details.globalPosition.dx}---${details.globalPosition.dy}');
+
     if((details.globalPosition.dx - lastPos.dx).abs() > (details.globalPosition.dy - lastPos.dy).abs()){
       ///横向滑动
       if(details.globalPosition.dx > lastPos.dx){
@@ -127,6 +139,9 @@ class DemoPageState extends State<DemoPage> {
       case SlideDirection.Left:
         if(rightController.offset < rightController.position.maxScrollExtent){
           rightController.jumpTo(rightController.offset + disH);
+          if(!chartShow){
+            tagController.jumpTo(tagController.offset + disH);
+          }
         }
         break;
       case SlideDirection.Right:
@@ -135,9 +150,12 @@ class DemoPageState extends State<DemoPage> {
             rightController.jumpTo(quarter*3);
           }else{
             rightController.jumpTo(rightController.offset - disH);
+            if(!chartShow){
+              tagController.jumpTo(tagController.offset - disH);
+            }
           }
 
-        }else if(rightController.offset <= quarter*3){
+        }else if(rightController.offset != 0 && rightController.offset <= quarter*3){
           rightController.jumpTo(rightController.offset - disH/3);
         }
 
@@ -148,6 +166,7 @@ class DemoPageState extends State<DemoPage> {
         if(stockVerticalController.offset < stockVerticalController.position.maxScrollExtent){
           stockVerticalController.jumpTo(stockVerticalController.offset+disV);
           stockNameController.jumpTo(stockNameController.offset+disV);
+          chartController.jumpTo(stockNameController.offset+disV);
         }
 
         break;
@@ -155,6 +174,7 @@ class DemoPageState extends State<DemoPage> {
         if(stockVerticalController.offset > stockVerticalController.position.minScrollExtent){
           stockVerticalController.jumpTo(stockVerticalController.offset-disV);
           stockNameController.jumpTo(stockNameController.offset-disV);
+          chartController.jumpTo(stockNameController.offset-disV);
         }
         break;
     }
@@ -185,6 +205,11 @@ class DemoPageState extends State<DemoPage> {
                 width: quarter,height: blockHeight,
                 child: Text('编辑',style: TextStyle(color: Colors.black),),
               ),
+              ///right top detail tag
+              Positioned(
+                left: quarter,
+                child: buildTags(),
+              ),
               ///left stock name
               buildStockName(size),
 
@@ -192,6 +217,34 @@ class DemoPageState extends State<DemoPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget buildTags(){
+    return Container(
+      width: quarter*3, height: blockHeight,
+      child: chartShow ?
+          Row(
+            children: <Widget>[
+              Container(width: quarter*2,height: blockHeight,alignment: Alignment.center,
+                child: Text('分时图'),),
+              Container(width: quarter*1,height: blockHeight,alignment: Alignment.center,
+                child: Text('涨幅'),),
+            ],
+          )
+          : ListView(
+        controller: tagController,
+        physics: NeverScrollableScrollPhysics(),
+        scrollDirection: Axis.horizontal,
+        children: List.generate(titles.length, (index){
+          return Container(
+            color: Colors.white,
+            width: quarter,height: blockHeight,
+            alignment: Alignment.center,
+            child: Text('${titles[index]}'),
+          );
+        }),
       ),
     );
   }
@@ -227,7 +280,7 @@ class DemoPageState extends State<DemoPage> {
 
   Widget buildLeftDetail(){
     return ListView.builder(
-      controller: stockVerticalController,
+      controller: chartController,
       physics: NeverScrollableScrollPhysics(),
       padding: EdgeInsets.all(0),
       itemCount: 50,
